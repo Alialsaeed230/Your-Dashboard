@@ -1,0 +1,42 @@
+[
+    {
+        "skill": "SQL",
+        "count": 2
+    },
+    {
+        "skill": "JavaScript",
+        "count": 2
+    },
+    {
+        "skill": "REST APIs",
+        "count": 2
+    },
+    {
+        "skill": ".NET",
+        "count": 1
+    },
+    {
+        "skill": "SQLite",
+        "count": 1
+    },
+    {
+        "skill": "Python",
+        "count": 1
+    },
+    {
+        "skill": "HTML",
+        "count": 1
+    },
+    {
+        "skill": "CSS",
+        "count": 1
+    },
+    {
+        "skill": "React",
+        "count": 1
+    },
+    {
+        "skill": "Docker",
+        "count": 1
+    }
+]
