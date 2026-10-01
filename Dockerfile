@@ -2,7 +2,7 @@
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
 
-# Copy project file from the BackEnd folder and restore dependencies
+# Copy project file from BackEnd folder and restore dependencies
 COPY BackEnd/*.csproj ./BackEnd/
 RUN dotnet restore BackEnd/*.csproj
 
@@ -20,4 +20,5 @@ COPY --from=build /app/publish .
 ENV ASPNETCORE_URLS=http://+:8080
 EXPOSE 8080
 
-ENTRYPOINT ["dotnet", "JobDashboard.dll"]
+# FIX: Target backend.dll instead of JobDashboard.dll
+ENTRYPOINT ["dotnet", "backend.dll"]
