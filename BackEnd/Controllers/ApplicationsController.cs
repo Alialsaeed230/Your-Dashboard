@@ -17,6 +17,7 @@ namespace JobDashboard.Controllers
             _context = context;
         }
 
+        // GET: api/applications
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Application>>> GetApplications()
         {
@@ -25,6 +26,7 @@ namespace JobDashboard.Controllers
                 .ToListAsync();
         }
 
+        // POST: api/applications
         [HttpPost]
         public async Task<ActionResult<Application>> PostApplication([FromBody] Application application)
         {
@@ -45,6 +47,25 @@ namespace JobDashboard.Controllers
             return Ok(application);
         }
 
+        // PUT: api/applications/5/status
+        [HttpPut("{id}/status")]
+        public async Task<IActionResult> UpdateStatus(int id, [FromBody] string status)
+        {
+            var application = await _context.Applications.FindAsync(id);
+            if (application == null) return NotFound();
+
+            if (string.IsNullOrWhiteSpace(status))
+            {
+                return BadRequest("Status cannot be empty.");
+            }
+
+            application.Status = status;
+            await _context.SaveChangesAsync();
+
+            return NoContent();
+        }
+
+        // DELETE: api/applications/5
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteApplication(int id)
         {
@@ -56,12 +77,13 @@ namespace JobDashboard.Controllers
             return NoContent();
         }
 
+        // GET: api/applications/scraped-jobs
         [HttpGet("scraped-jobs")]
         public async Task<IActionResult> GetScrapedJobs()
         {
             var handler = new HttpClientHandler { AllowAutoRedirect = true, MaxAutomaticRedirections = 5 };
-            using var client = new HttpClient(handler) { Timeout = TimeSpan.FromSeconds(8) };
-            client.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36");
+            using var client = new HttpClient(handler) { Timeout = TimeSpan.FromSeconds(5) };
+            client.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
 
             var meJobs = new List<object>();
 
@@ -76,7 +98,7 @@ namespace JobDashboard.Controllers
                     foreach (var item in xdoc.Descendants("item"))
                     {
                         string title = item.Element("title")?.Value ?? "";
-                        string link = item.Element("link")?.Value ?? "#";
+                        string link = item.Element("link")?.Value ?? "https://www.bayt.com";
 
                         var parts = title.Split('-');
                         string role = parts.Length > 0 ? parts[0].Trim() : title;
@@ -89,16 +111,18 @@ namespace JobDashboard.Controllers
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"[Scraper Note] Live feed bypass: {ex.Message}");
+                Console.WriteLine($"[Scraper Feed Info] Live feed fallback engaged: {ex.Message}");
             }
 
+            // Always serve regional job data if the external RSS blocks request or times out
             if (meJobs.Count == 0)
             {
                 meJobs.AddRange(new[]
                 {
-                    new { id = "1", company = "Aramco Digital", role = "Full Stack Engineer (.NET)", location = "Dhahran, Saudi Arabia", url = "https://www.bayt.com" },
-                    new { id = "2", company = "Talabat", role = "Senior Backend Developer", location = "Dubai, UAE", url = "https://www.bayt.com" },
-                    new { id = "3", company = "Fawry", role = "DevOps Specialist", location = "Cairo, Egypt", url = "https://wuzzuf.net" }
+                    new { id = "1", company = "Aramco Digital", role = "Full Stack Engineer (.NET 8)", location = "Dhahran, Saudi Arabia", url = "https://www.bayt.com" },
+                    new { id = "2", company = "Talabat", role = "Senior Backend Engineer", location = "Dubai, UAE", url = "https://www.bayt.com" },
+                    new { id = "3", company = "Fawry", role = "DevOps Engineer", location = "Cairo, Egypt", url = "https://wuzzuf.net" },
+                    new { id = "4", company = "STC Pay", role = "Cloud Solutions Architect", location = "Riyadh, Saudi Arabia", url = "https://www.bayt.com" }
                 });
             }
 
