@@ -30,7 +30,13 @@ async function loadApplications() {
         if (!res.ok) throw new Error(`HTTP Error ${res.status}`);
         const data = await res.json();
         const list = document.getElementById("app-list");
+        
         if (list) {
+            if (data.length === 0) {
+                list.innerHTML = `<tr><td colspan="5" style="text-align: center;">No applications saved yet.</td></tr>`;
+                return;
+            }
+
             list.innerHTML = data.map(app => `
                 <tr>
                     <td>${escapeHtml(app.company)}</td>
@@ -45,13 +51,13 @@ async function loadApplications() {
                     </td>
                     <td>${new Date(app.appliedAt).toLocaleDateString()}</td>
                     <td>
-                        <button style="color: red; cursor: pointer;" onclick="deleteApplication(${app.id})">Delete</button>
+                        <button class="btn-delete" onclick="deleteApplication(${app.id})">Delete</button>
                     </td>
                 </tr>
             `).join('');
         }
     } catch (err) {
-        console.error("Load Apps Error:", err);
+        console.error("Load Applications Error:", err);
     }
 }
 
@@ -59,27 +65,27 @@ async function loadScrapedJobs() {
     const list = document.getElementById("scraped-list");
     if (!list) return;
 
-    list.innerHTML = "<li>Loading MENA opportunities...</li>";
+    list.innerHTML = "<li>Loading opportunities...</li>";
 
     try {
         const res = await fetch(`${API_URL}/scraped-jobs`);
         if (!res.ok) throw new Error(`HTTP Error ${res.status}`);
         const jobs = await res.json();
-        
+
         if (!jobs || jobs.length === 0) {
             list.innerHTML = "<li>No active jobs found right now.</li>";
             return;
         }
 
         list.innerHTML = jobs.map(j => `
-            <li style="margin-bottom: 8px;">
-                <strong>${escapeHtml(j.company)}</strong> — ${escapeHtml(j.role)} (${escapeHtml(j.location)})
-                <a href="${j.url}" target="_blank" style="margin-left: 8px;">Apply Link</a>
+            <li>
+                <strong>${escapeHtml(j.company)}</strong> — ${escapeHtml(j.role)} <em>(${escapeHtml(j.location)})</em>
+                <a href="${j.url}" target="_blank" style="margin-left: 10px; color: #2563eb;">View Position</a>
             </li>
         `).join('');
     } catch (err) {
         console.error("Load Scraped Jobs Error:", err);
-        list.innerHTML = "<li>Unable to fetch live feed right now. Please refresh in a moment.</li>";
+        list.innerHTML = "<li>Unable to load live jobs feed at the moment.</li>";
     }
 }
 
@@ -96,7 +102,7 @@ async function saveApplication(company, role, status) {
         }
         loadApplications();
     } catch (err) {
-        alert(`Error saving record: ${err.message}`);
+        alert(`Error saving application: ${err.message}`);
     }
 }
 
@@ -107,8 +113,7 @@ async function updateStatus(id, newStatus) {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(newStatus)
         });
-        if (!res.ok) throw new Error(`Server returned ${res.status}`);
-        console.log(`Updated ID ${id} to ${newStatus}`);
+        if (!res.ok) throw new Error(`Server returned status ${res.status}`);
     } catch (err) {
         alert(`Failed to update status: ${err.message}`);
         loadApplications();
@@ -122,7 +127,7 @@ async function deleteApplication(id) {
         const res = await fetch(`${API_URL}/${id}`, {
             method: "DELETE"
         });
-        if (!res.ok) throw new Error(`Server returned ${res.status}`);
+        if (!res.ok) throw new Error(`Server returned status ${res.status}`);
         loadApplications();
     } catch (err) {
         alert(`Failed to delete record: ${err.message}`);
