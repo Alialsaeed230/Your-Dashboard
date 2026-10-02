@@ -96,7 +96,7 @@ th {
 
 tr:last-child td { border-bottom: none; }
 
-/* Status Badge Select Styling */
+/* Status Select Badges */
 .status-select {
     appearance: none;
     -webkit-appearance: none;
@@ -114,7 +114,7 @@ tr:last-child td { border-bottom: none; }
 .status-select[data-status="Offered"] { background-color: var(--status-offered-bg); color: var(--status-offered-text); }
 .status-select[data-status="Rejected"] { background-color: var(--status-rejected-bg); color: var(--status-rejected-text); }
 
-/* Minimalist Close / Delete Button */
+/* Minimalist Delete Button (x) */
 .btn-delete { 
     background: transparent; 
     color: var(--text-muted); 
