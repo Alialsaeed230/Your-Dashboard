@@ -1,160 +1,267 @@
-:root {
-    --bg-color: #f8fafc;
-    --card-bg: #ffffff;
-    --text-main: #1e293b;
-    --text-muted: #64748b;
-    --border-color: #e2e8f0;
-    --primary: #2563eb;
-    --primary-hover: #1d4ed8;
-    
-    /* Status Badge Colors */
-    --status-applied-bg: #e0f2fe;
-    --status-applied-text: #0369a1;
-    --status-interview-bg: #fef3c7;
-    --status-interview-text: #b45309;
-    --status-offered-bg: #dcfce7;
-    --status-offered-text: #15803d;
-    --status-rejected-bg: #fee2e2;
-    --status-rejected-text: #b91c1c;
+/* ==========================================================================
+   1. Reset & Global Styles
+   ========================================================================== */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 }
 
-body { 
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif; 
-    max-width: 900px; 
-    margin: 40px auto; 
-    padding: 0 20px; 
-    color: var(--text-main); 
-    background-color: var(--bg-color);
-}
-
-h1, h2 { color: #0f172a; margin-bottom: 16px; }
-
-form { 
-    display: flex; 
-    gap: 12px; 
-    margin-bottom: 30px; 
-    flex-wrap: wrap; 
-    background: var(--card-bg);
-    padding: 16px;
-    border-radius: 8px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-    border: 1px solid var(--border-color);
-}
-
-input, select, button { 
-    padding: 10px 14px; 
-    font-size: 14px; 
-    border: 1px solid var(--border-color); 
-    border-radius: 6px; 
-    outline: none;
-    transition: all 0.2s ease;
-}
-
-input:focus, select:focus {
-    border-color: var(--primary);
-    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
-}
-
-input { flex: 1; min-width: 160px; }
-
-button[type="submit"] { 
-    background-color: var(--primary); 
-    color: white; 
-    border: none; 
-    cursor: pointer; 
-    font-weight: 600; 
-}
-
-button[type="submit"]:hover { background-color: var(--primary-hover); }
-
-table { 
-    width: 100%; 
-    border-collapse: separate; 
-    border-spacing: 0;
-    margin-top: 15px; 
-    background: var(--card-bg);
-    border-radius: 8px;
-    overflow: hidden;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-    border: 1px solid var(--border-color);
-}
-
-th, td { 
-    padding: 14px 16px; 
-    text-align: left; 
-    border-bottom: 1px solid var(--border-color);
-}
-
-th { 
-    background-color: #f1f5f9; 
-    font-weight: 600; 
-    color: var(--text-muted);
-    font-size: 13px;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-tr:last-child td { border-bottom: none; }
-
-/* Status Select Badges */
-.status-select {
-    appearance: none;
-    -webkit-appearance: none;
-    padding: 6px 12px;
-    font-size: 13px;
-    font-weight: 600;
-    border-radius: 20px;
-    border: 1px solid transparent;
-    cursor: pointer;
-    text-align: center;
-}
-
-.status-select[data-status="Applied"] { background-color: var(--status-applied-bg); color: var(--status-applied-text); }
-.status-select[data-status="Interviewing"] { background-color: var(--status-interview-bg); color: var(--status-interview-text); }
-.status-select[data-status="Offered"] { background-color: var(--status-offered-bg); color: var(--status-offered-text); }
-.status-select[data-status="Rejected"] { background-color: var(--status-rejected-bg); color: var(--status-rejected-text); }
-
-/* Minimalist Delete Button (x) */
-.btn-delete { 
-    background: transparent; 
-    color: var(--text-muted); 
-    border: none; 
-    width: 28px;
-    height: 28px;
-    border-radius: 50%;
-    font-size: 18px; 
-    line-height: 1;
-    cursor: pointer; 
-    display: inline-flex;
-    align-items: center;
+body {
+    background-color: #0f172a;
+    color: #f8fafc;
+    min-height: 100vh;
+    padding: 2rem;
+    display: flex;
     justify-content: center;
-    transition: all 0.2s ease;
 }
 
-.btn-delete:hover { 
-    background-color: var(--status-rejected-bg); 
-    color: var(--status-rejected-text); 
+.dashboard-container {
+    width: 100%;
+    max-width: 1200px;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
 }
 
-ul { list-style: none; padding: 0; }
-
-li { 
-    background: var(--card-bg); 
-    border: 1px solid var(--border-color); 
-    padding: 14px; 
-    margin-bottom: 10px; 
-    border-radius: 8px; 
+/* ==========================================================================
+   2. Header & KPI Cards
+   ========================================================================== */
+.navbar {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+    background: #1e293b;
+    padding: 1.25rem 2rem;
+    border-radius: 12px;
+    border: 1px solid #334155;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
 }
 
-.job-link {
-    color: var(--primary);
-    text-decoration: none;
+.navbar h1 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #38bdf8;
+    letter-spacing: -0.025em;
+}
+
+.kpi-group {
+    display: flex;
+    gap: 1rem;
+}
+
+.kpi-card {
+    background: #0f172a;
+    border: 1px solid #334155;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.kpi-num {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #38bdf8;
+}
+
+.kpi-label {
+    font-size: 0.875rem;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+/* ==========================================================================
+   3. Grid Layout & Panels
+   ========================================================================== */
+.grid-layout {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 1.5rem;
+}
+
+@media (max-width: 900px) {
+    .grid-layout {
+        grid-template-columns: 1fr;
+    }
+}
+
+.panel {
+    background: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+}
+
+.panel h2 {
+    font-size: 1.15rem;
     font-weight: 600;
-    font-size: 13px;
+    color: #f1f5f9;
+    margin-bottom: 1rem;
 }
 
-.job-link:hover { text-decoration: underline; }
+.subtext {
+    font-size: 0.875rem;
+    color: #94a3b8;
+    margin-top: -0.5rem;
+    margin-bottom: 1rem;
+}
+
+/* ==========================================================================
+   4. Form Controls
+   ========================================================================== */
+#app-form {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.form-group {
+    display: flex;
+    gap: 0.75rem;
+}
+
+.form-group input,
+.form-group select {
+    flex: 1;
+    background: #0f172a;
+    border: 1px solid #334155;
+    color: #f8fafc;
+    padding: 0.625rem 0.875rem;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+    border-color: #38bdf8;
+}
+
+.btn-primary {
+    background-color: #0284c7;
+    color: #ffffff;
+    font-weight: 600;
+    padding: 0.625rem 1.25rem;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.875rem;
+    transition: background-color 0.2s;
+}
+
+.btn-primary:hover {
+    background-color: #0369a1;
+}
+
+/* ==========================================================================
+   5. Data Table
+   ========================================================================== */
+#app-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 0.5rem;
+    text-align: left;
+}
+
+#app-table th {
+    background-color: #0f172a;
+    color: #64748b;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid #334155;
+}
+
+#app-table td {
+    padding: 0.875rem 1rem;
+    border-bottom: 1px solid #334155;
+    font-size: 0.875rem;
+    color: #cbd5e1;
+}
+
+#app-table tr:last-child td {
+    border-bottom: none;
+}
+
+/* Status Badges */
+.badge-status {
+    padding: 0.25rem 0.625rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    display: inline-block;
+}
+
+.status-applied {
+    background-color: rgba(59, 130, 246, 0.2);
+    color: #60a5fa;
+}
+
+.status-interviewing {
+    background-color: rgba(234, 179, 8, 0.2);
+    color: #facc15;
+}
+
+.status-offer {
+    background-color: rgba(34, 197, 94, 0.2);
+    color: #4ade80;
+}
+
+.status-rejected {
+    background-color: rgba(239, 68, 68, 0.2);
+    color: #f87171;
+}
+
+/* ==========================================================================
+   6. Skills Analytics Sidebar
+   ========================================================================== */
+.skills-container {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.skills-container li {
+    background: #0f172a;
+    border: 1px solid #334155;
+    padding: 0.625rem 0.875rem;
+    border-radius: 6px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.875rem;
+}
+
+.skills-container .skill-count {
+    background: #334155;
+    color: #38bdf8;
+    padding: 0.125rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 700;
+}
+
+/* Delete Action Button */
+.btn-delete {
+    background: transparent;
+    border: 1px solid #ef4444;
+    color: #ef4444;
+    border-radius: 4px;
+    padding: 0.25rem 0.5rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-delete:hover {
+    background: #ef4444;
+    color: #ffffff;
+}
