@@ -78,46 +78,46 @@ namespace JobDashboard.Controllers
             return NoContent();
         }
 
-        // GET: api/applications/scraped-jobs
-        [HttpGet("scraped-jobs")]
-        public async Task<IActionResult> GetScrapedJobs()
+       // GET: api/applications/scraped-jobs
+[HttpGet("scraped-jobs")]
+public async Task<IActionResult> GetScrapedJobs()
+{
+    try
+    {
+        var client = _httpClientFactory.CreateClient();
+        client.Timeout = TimeSpan.FromSeconds(5);
+        client.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0 (Windows NT 10.0; Win64; x64)");
+
+        var response = await client.GetFromJsonAsync<RemotiveResponse>("https://remotive.com/api/remote-jobs?category=software-dev&limit=6");
+
+        if (response?.Jobs != null && response.Jobs.Any())
         {
-            var client = _httpClientFactory.CreateClient();
-            client.Timeout = TimeSpan.FromSeconds(5);
-            client.DefaultRequestHeaders.UserAgent.ParseAdd("JobDashboardApp/1.0");
-
-            try
+            var jobs = response.Jobs.Select(j => new
             {
-                var response = await client.GetFromJsonAsync<RemotiveResponse>("https://remotive.com/api/remote-jobs?category=software-dev&limit=6");
-
-                if (response?.Jobs != null && response.Jobs.Any())
-                {
-                    var jobs = response.Jobs.Select(j => new
-                    {
-                        id = j.Id.ToString(),
-                        company = j.CompanyName,
-                        role = j.Title,
-                        location = j.CandidateRequiredLocation ?? "Remote",
-                        url = j.Url
-                    });
-
-                    return Ok(jobs);
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"[Scraper Feed Info] Primary live feed bypass activated: {ex.Message}");
-            }
-
-            // Regional fallback opportunities
-            return Ok(new[]
-            {
-                new { id = "1", company = "Aramco Digital", role = "Full Stack Engineer (.NET 8)", location = "Dhahran, KSA", url = "https://www.bayt.com" },
-                new { id = "2", company = "Talabat", role = "Senior Backend Engineer", location = "Dubai, UAE", url = "https://www.bayt.com" },
-                new { id = "3", company = "Fawry", role = "DevOps Specialist", location = "Cairo, Egypt", url = "https://wuzzuf.net" },
-                new { id = "4", company = "STC Pay", role = "Cloud Solutions Architect", location = "Riyadh, KSA", url = "https://www.bayt.com" }
+                id = j.Id.ToString(),
+                company = j.CompanyName ?? "Unknown",
+                role = j.Title ?? "Software Engineer",
+                location = string.IsNullOrWhiteSpace(j.CandidateRequiredLocation) ? "Remote" : j.CandidateRequiredLocation,
+                url = string.IsNullOrWhiteSpace(j.Url) ? "https://remotive.com" : j.Url
             });
+
+            return Ok(jobs);
         }
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"[Scraper Feed Info] Primary live feed bypass activated: {ex.Message}");
+    }
+
+    // Regional fallback opportunities (guarantees feed never breaks)
+    return Ok(new[]
+    {
+        new { id = "1", company = "Aramco Digital", role = "Full Stack Engineer (.NET 8)", location = "Dhahran, KSA", url = "https://www.bayt.com" },
+        new { id = "2", company = "Talabat", role = "Senior Backend Engineer", location = "Dubai, UAE", url = "https://www.bayt.com" },
+        new { id = "3", company = "Fawry", role = "DevOps Specialist", location = "Cairo, Egypt", url = "https://wuzzuf.net" },
+        new { id = "4", company = "STC Pay", role = "Cloud Solutions Architect", location = "Riyadh, KSA", url = "https://www.bayt.com" }
+    });
+}
     }
 
     public class RemotiveResponse
