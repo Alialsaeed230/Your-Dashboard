@@ -6,9 +6,7 @@ var builder = WebApplication.CreateBuilder(args);
 // Register Controllers
 builder.Services.AddControllers();
 
-// ----------------------------------------------------
-// REQUIRED FIX: Register IHttpClientFactory in DI
-// ----------------------------------------------------
+// Register HttpClientFactory for External Feed Scraper
 builder.Services.AddHttpClient();
 
 // Database Setup
@@ -16,7 +14,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection") 
                       ?? "Data Source=app.db"));
 
-// CORS Setup
+// CORS Policy
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll", policy =>
@@ -29,7 +27,7 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
-// Ensure Database Created
+// Ensure Database Initialized
 using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
