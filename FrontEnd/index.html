@@ -3,42 +3,52 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MENA Job Dashboard</title>
-    <!-- Linked CSS stylesheet -->
-    <link rel="stylesheet" href="style.css">
+    <title>your-dashboard.com</title>
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <h1>Your-Dashboard</h1>
-
-    <form id="app-form">
-        <input type="text" id="company" placeholder="Company Name" required>
-        <input type="text" id="role" placeholder="Role Title" required>
-        <select id="status">
-            <option value="Applied">Applied</option>
-            <option value="Interviewing">Interviewing</option>
-            <option value="Offered">Offered</option>
-            <option value="Rejected">Rejected</option>
-        </select>
-        <button type="submit">Save Application</button>
-    </form>
-
-    <h2>Saved Applications</h2>
-    <table>
-        <thead>
-            <tr>
-                <th>Company</th>
-                <th>Role</th>
-                <th>Status</th>
-                <th>Date Applied</th>
-                <th style="text-align: center;">Remove</th>
-            </tr>
-        </thead>
-        <tbody id="app-list"></tbody>
-    </table>
-
-    <h2 style="margin-top: 40px;">Live Opportunities Feed</h2>
-    <ul id="scraped-list"></ul>
-
+    <div class="dashboard-container">
+        <header class="navbar">
+            <h1>YOUR DASHBOARD</h1>
+            <div class="kpi-group">
+                <div class="kpi-card"><span class="kpi-num" id="stat-total">0</span><span class="kpi-label">Applications</span></div>
+            </div>
+        </header>
+        <main class="grid-layout">
+            <!-- Left Column: Application Tracker -->
+            <section class="panel">
+                <h2>Log Job Application</h2>
+                <form id="app-form">
+                    <div class="form-group">
+                        <input type="text" id="company" placeholder="Company Name" required>
+                        <input type="text" id="role" placeholder="Role (e.g. C# / Python Dev)" required>
+                    </div>
+                    <div class="form-group">
+                        <select id="status">
+                            <option value="Applied">Applied</option>
+                            <option value="Interviewing">Interviewing</option>
+                            <option value="Offer">Offer</option>
+                            <option value="Rejected">Rejected</option>
+                        </select>
+                        <button type="submit" class="btn-primary">+ Add Record</button>
+                    </div>
+                </form>
+                <h2 style="margin-top: 15px;">Application History</h2>
+                <table id="app-table">
+                    <thead>
+                        <tr><th>Company</th><th>Role</th><th>Status</th><th>Action</th></tr>
+                    </thead>
+                    <tbody id="app-list"><!-- Dynamic Rows --></tbody>
+                </table>
+            </section>
+            <!-- Right Column: Scraped Skill Analytics -->
+            <section class="panel">
+                <h2>Scraped Tech Job Applications</h2>
+                <p class="subtext">Live skill frequency fetched by Python engine.</p>
+                <ul id="skills-list" class="skills-container"><!-- Dynamic Skill List --></ul>
+            </section>
+        </main>
+    </div>
     <script src="app.js"></script>
 </body>
 </html>
