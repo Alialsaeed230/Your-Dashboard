@@ -2,6 +2,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using JobDashboard.Data;
 using JobDashboard.Models;
+using System.Text.Json;
+using System.Xml.Linq;
 
 namespace JobDashboard.Controllers
 {
@@ -12,6 +14,14 @@ namespace JobDashboard.Controllers
         private readonly AppDbContext _context;
         private readonly IHttpClientFactory _httpClientFactory;
 
+        // Regional Whitelist for Middle East Filtering
+        private static readonly string[] MiddleEastCountries = new[]
+        {
+            "Bahrain", "Saudi Arabia", "UAE", "United Arab Emirates", "Dubai", "Abu Dhabi",
+            "Riyadh", "Jeddah", "Qatar", "Doha", "Kuwait", "Oman", "Muscat", "Jordan",
+            "Amman", "Egypt", "Cairo", "Lebanon", "Beirut", "MENA", "GCC", "Middle East"
+        };
+
         public ApplicationsController(AppDbContext context, IHttpClientFactory httpClientFactory)
         {
             _context = context;
@@ -20,127 +30,177 @@ namespace JobDashboard.Controllers
 
         // GET: api/applications
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Application>>> GetApplications()
+        public async Task<ActionResult<IEnumerable<JobDashboard.Models.Application>>> GetApplications()
         {
-            return await _context.Applications
-                .OrderByDescending(a => a.AppliedAt)
-                .ToListAsync();
+            return await _context.Applications.ToListAsync();
         }
 
         // POST: api/applications
         [HttpPost]
-        public async Task<ActionResult<Application>> PostApplication([FromBody] Application application)
+        public async Task<ActionResult<JobDashboard.Models.Application>> PostApplication(JobDashboard.Models.Application application)
         {
-            if (application == null || string.IsNullOrWhiteSpace(application.Company) || string.IsNullOrWhiteSpace(application.Role))
+            if (string.IsNullOrWhiteSpace(application.Company) || string.IsNullOrWhiteSpace(application.Role))
             {
                 return BadRequest("Company and Role are required.");
             }
 
-            if (string.IsNullOrWhiteSpace(application.Status))
+            if (application.AppliedAt == default)
             {
-                application.Status = "Applied";
+                application.AppliedAt = DateTime.UtcNow;
             }
 
-            application.AppliedAt = DateTime.UtcNow;
             _context.Applications.Add(application);
             await _context.SaveChangesAsync();
 
-            return Ok(application);
+            return CreatedAtAction(nameof(GetApplications), new { id = application.Id }, application);
         }
 
-        // PUT: api/applications/5/status
+        // PUT: api/applications/{id}/status
         [HttpPut("{id}/status")]
-        public async Task<IActionResult> UpdateStatus(int id, [FromBody] string status)
+        public async Task<IActionResult> UpdateStatus(int id, [FromBody] StatusUpdateModel model)
         {
             var application = await _context.Applications.FindAsync(id);
-            if (application == null) return NotFound();
-
-            if (string.IsNullOrWhiteSpace(status))
+            if (application == null)
             {
-                return BadRequest("Status value cannot be empty.");
+                return NotFound();
             }
 
-            application.Status = status;
+            application.Status = model.Status;
             await _context.SaveChangesAsync();
 
             return NoContent();
         }
 
-        // DELETE: api/applications/5
+        // DELETE: api/applications/{id}
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteApplication(int id)
         {
             var application = await _context.Applications.FindAsync(id);
-            if (application == null) return NotFound();
+            if (application == null)
+            {
+                return NotFound();
+            }
 
             _context.Applications.Remove(application);
             await _context.SaveChangesAsync();
+
             return NoContent();
         }
 
-       // GET: api/applications/scraped-jobs
-[HttpGet("scraped-jobs")]
-public async Task<IActionResult> GetScrapedJobs()
-{
-    try
-    {
-        var client = _httpClientFactory.CreateClient();
-        client.Timeout = TimeSpan.FromSeconds(5);
-        client.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0 (Windows NT 10.0; Win64; x64)");
-
-        var response = await client.GetFromJsonAsync<RemotiveResponse>("https://remotive.com/api/remote-jobs?category=software-dev&limit=6");
-
-        if (response?.Jobs != null && response.Jobs.Any())
+        // GET: api/applications/scraped-jobs (STRICT MIDDLE EAST ONLY)
+        [HttpGet("scraped-jobs")]
+        public async Task<IActionResult> GetScrapedJobs()
         {
-            var jobs = response.Jobs.Select(j => new
-            {
-                id = j.Id.ToString(),
-                company = j.CompanyName ?? "Unknown",
-                role = j.Title ?? "Software Engineer",
-                location = string.IsNullOrWhiteSpace(j.CandidateRequiredLocation) ? "Remote" : j.CandidateRequiredLocation,
-                url = string.IsNullOrWhiteSpace(j.Url) ? "https://remotive.com" : j.Url
-            });
+            var client = _httpClientFactory.CreateClient();
+            client.Timeout = TimeSpan.FromSeconds(8);
+            client.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36");
 
-            return Ok(jobs);
+            var meJobs = new List<object>();
+
+            // 1. Fetch from Middle East RSS Feed (Bayt / Gulf Job Feeds)
+            try
+            {
+                var response = await client.GetAsync("https://www.bayt.com/en/rss/jobs/");
+                if (response.IsSuccessStatusCode)
+                {
+                    var xmlString = await response.Content.ReadAsStringAsync();
+                    var xdoc = XDocument.Parse(xmlString);
+
+                    var items = xdoc.Descendants("item");
+                    foreach (var item in items)
+                    {
+                        string title = item.Element("title")?.Value ?? "";
+                        string link = item.Element("link")?.Value ?? "#";
+
+                        var parts = title.Split('-');
+                        string role = parts.Length > 0 ? parts[0].Trim() : title;
+                        string company = parts.Length > 1 ? parts[1].Trim() : "Bayt Employer";
+                        string location = parts.Length > 2 ? parts[2].Trim() : "Middle East";
+
+                        meJobs.Add(new
+                        {
+                            id = Guid.NewGuid().ToString(),
+                            company = company,
+                            role = role,
+                            location = location,
+                            url = link
+                        });
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"RSS Feed Error: {ex.Message}");
+            }
+
+            // 2. Fallback API filter with strict Middle East location matching
+            if (meJobs.Count == 0)
+            {
+                try
+                {
+                    var response = await client.GetAsync("https://remoteok.com/api");
+                    if (response.IsSuccessStatusCode)
+                    {
+                        var content = await response.Content.ReadAsStringAsync();
+                        using JsonDocument doc = JsonDocument.Parse(content);
+
+                        if (doc.RootElement.ValueKind == JsonValueKind.Array)
+                        {
+                            foreach (var element in doc.RootElement.EnumerateArray())
+                            {
+                                if (!element.TryGetProperty("position", out _)) continue;
+
+                                string location = element.TryGetProperty("location", out var locProp) ? locProp.GetString() ?? "" : "";
+                                string position = element.TryGetProperty("position", out var posProp) ? posProp.GetString() ?? "" : "";
+
+                                bool matchesLocation = MiddleEastCountries.Any(c => 
+                                    location.Contains(c, StringComparison.OrdinalIgnoreCase)
+                                );
+
+                                if (matchesLocation)
+                                {
+                                    string jobId = element.TryGetProperty("id", out var idProp) ? idProp.ToString() : Guid.NewGuid().ToString();
+                                    string companyName = element.TryGetProperty("company", out var compProp) ? compProp.GetString() ?? "Unknown" : "Unknown";
+                                    string jobUrl = element.TryGetProperty("url", out var urlProp) ? urlProp.GetString() ?? "#" : "#";
+
+                                    meJobs.Add(new
+                                    {
+                                        id = jobId,
+                                        company = companyName,
+                                        role = position,
+                                        location = string.IsNullOrWhiteSpace(location) ? "Middle East" : location,
+                                        url = jobUrl
+                                    });
+                                }
+                            }
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"API Fallback Error: {ex.Message}");
+                }
+            }
+
+            // 3. Fallback mock MENA tech roles if upstream services return empty results
+            if (meJobs.Count == 0)
+            {
+                meJobs.AddRange(new[]
+                {
+                    new { id = "1", company = "Aramco Digital", role = "Full Stack Engineer", location = "Dhahran, Saudi Arabia", url = "https://www.bayt.com" },
+                    new { id = "2", company = "Talabat", role = "Senior Backend Developer (.NET)", location = "Dubai, UAE", url = "https://www.bayt.com" },
+                    new { id = "3", company = "Fawry", role = "DevOps Engineer", location = "Cairo, Egypt", url = "https://wuzzuf.net" },
+                    new { id = "4", company = "Benefit Bahrain", role = "Cloud Solutions Architect", location = "Manama, Bahrain", url = "https://www.bayt.com" },
+                    new { id = "5", company = "Zain Group", role = "Data Analyst", location = "Kuwait City, Kuwait", url = "https://www.bayt.com" }
+                });
+            }
+
+            return Ok(meJobs);
         }
     }
-    catch (Exception ex)
+
+    public class StatusUpdateModel
     {
-        Console.WriteLine($"[Scraper Feed Info] Primary live feed bypass activated: {ex.Message}");
-    }
-
-    // Regional fallback opportunities (guarantees feed never breaks)
-    return Ok(new[]
-    {
-        new { id = "1", company = "Aramco Digital", role = "Full Stack Engineer (.NET 8)", location = "Dhahran, KSA", url = "https://www.bayt.com" },
-        new { id = "2", company = "Talabat", role = "Senior Backend Engineer", location = "Dubai, UAE", url = "https://www.bayt.com" },
-        new { id = "3", company = "Fawry", role = "DevOps Specialist", location = "Cairo, Egypt", url = "https://wuzzuf.net" },
-        new { id = "4", company = "STC Pay", role = "Cloud Solutions Architect", location = "Riyadh, KSA", url = "https://www.bayt.com" }
-    });
-}
-    }
-
-    public class RemotiveResponse
-    {
-        [System.Text.Json.Serialization.JsonPropertyName("jobs")]
-        public List<RemotiveJob>? Jobs { get; set; }
-    }
-
-    public class RemotiveJob
-    {
-        [System.Text.Json.Serialization.JsonPropertyName("id")]
-        public int Id { get; set; }
-
-        [System.Text.Json.Serialization.JsonPropertyName("title")]
-        public string Title { get; set; } = "";
-
-        [System.Text.Json.Serialization.JsonPropertyName("company_name")]
-        public string CompanyName { get; set; } = "";
-
-        [System.Text.Json.Serialization.JsonPropertyName("candidate_required_location")]
-        public string? CandidateRequiredLocation { get; set; }
-
-        [System.Text.Json.Serialization.JsonPropertyName("url")]
-        public string Url { get; set; } = "";
+        public string Status { get; set; } = "Applied";
     }
 }
