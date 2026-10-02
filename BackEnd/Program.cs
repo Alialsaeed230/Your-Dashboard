@@ -3,13 +3,23 @@ using JobDashboard.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddHttpClient();
-builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection") ?? "Data Source=app.db"));
+// Register Controllers
+builder.Services.AddControllers();
 
+// ----------------------------------------------------
+// REQUIRED FIX: Register IHttpClientFactory in DI
+// ----------------------------------------------------
+builder.Services.AddHttpClient();
+
+// Database Setup
+builder.Services.AddDbContext<AppDbContext>(options =>
+    options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection") 
+                      ?? "Data Source=app.db"));
+
+// CORS Setup
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowGitHubPages", policy =>
+    options.AddPolicy("AllowAll", policy =>
     {
         policy.AllowAnyOrigin()
               .AllowAnyHeader()
@@ -17,25 +27,16 @@ builder.Services.AddCors(options =>
     });
 });
 
-builder.Services.AddControllers();
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
-
 var app = builder.Build();
 
+// Ensure Database Created
 using (var scope = app.Services.CreateScope())
 {
-    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    db.Database.EnsureCreated();
+    var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    context.Database.EnsureCreated();
 }
 
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
-
-app.UseCors("AllowGitHubPages");
+app.UseCors("AllowAll");
 app.UseAuthorization();
 app.MapControllers();
 
